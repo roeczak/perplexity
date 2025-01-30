@@ -1,8 +1,8 @@
 import torch
 import pandas as pd
 import numpy as np
+import os
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from scipy.stats import ttest_ind
 
 class BloomPPL:
     def __init__(self, device="cuda", model_id="gpt2", precision="float32"):
@@ -51,37 +51,44 @@ class BloomPPL:
 # Initialize the model
 model = BloomPPL()
 
-# Load the dataset from CSV
+# Load the dataset
 csv_path = "/home/ubuntu/perplexity/multitude.csv"
 df = pd.read_csv(csv_path)
 
-# Function to calculate perplexities for a specific label and language
-def calculate_perplexities_limited(df, model, label, lang, limit=2000, min_length=10):
+# Create output folder
+output_folder = "/home/ubuntu/perplexity/perplexity_data/"
+os.makedirs(output_folder, exist_ok=True)
+
+# Function to calculate perplexities
+def calculate_perplexities_limited(df, model, label, lang, limit=3000, min_length=10):
     filtered_data = df[(df["label"] == label) & (df["language"] == lang) & (df["text"].str.len() >= min_length)]
     limited_data = filtered_data.head(min(limit, len(filtered_data)))
-    results = []
 
+    results = []
     for count, (_, row) in enumerate(limited_data.iterrows(), start=1):
         sentence = row["text"]
         perplexity = model(sentence)
         results.append({"text": sentence, "label": label, "perplexity": perplexity})
 
-        if count % 200 == 0:
-            print(f"Processed {count} texts for language {lang}, label {label}")
+        if count % 500 == 0:
+            print(f"Processed {count} texts for language: {lang}, label: {label}")
 
     return results
 
-# Iterate over each language
+# Process all languages
 languages = df["language"].unique()
 
 for lang in languages:
     print(f"Processing language: {lang}")
-    human_perplexities = calculate_perplexities_limited(df, model, label=0, lang=lang)
-    ai_perplexities = calculate_perplexities_limited(df, model, label=1, lang=lang)
 
-    # Combine results and save to CSV
-    all_results = human_perplexities + ai_perplexities
-    results_df = pd.DataFrame(all_results)
-    csv_filename = f"perplexities_{lang}.csv"
-    results_df.to_csv(csv_filename, index=False)
-    print(f"Saved perplexities for language {lang} to {csv_filename}")
+    human_data = calculate_perplexities_limited(df, model, label=0, lang=lang)
+    ai_data = calculate_perplexities_limited(df, model, label=1, lang=lang)
+
+    # Combine and save data
+    combined_data = pd.DataFrame(human_data + ai_data)
+    output_file = os.path.join(output_folder, f"perplexity_{lang}.csv")
+    combined_data.to_csv(output_file, index=False)
+
+    print(f"Saved perplexities for {lang} to {output_file}")
+
+print("All perplexity calculations completed.")
