@@ -52,7 +52,7 @@ class GPT2PPL:
 model = GPT2PPL()
 
 # Load the dataset from CSV
-csv_path = "/home/ec2-user/multitude.csv"
+csv_path = "/home/ubuntu/perplexity/multitude.csv"
 df = pd.read_csv(csv_path)
 
 # Function to calculate perplexities for a specific label and language
@@ -126,4 +126,4 @@ print("Summary of Results:")
 print(summary)
 
 # Optionally save the summary to a CSV file
-summary.to_csv("/home/ec2-user/perplexity_ttest_summary_2.csv", index=False)
+summary.to_csv("/home/ubuntu/perplexity/perplexity_ttest_summary_2.csv", index=False)

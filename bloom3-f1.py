@@ -100,7 +100,7 @@ all_results = []
 for label in labels:
     label_name = "Human" if label == 0 else "Generated"
     print(f"\nProcessing category: {label_name} (label={label})")
-    results = calculate_perplexities_limited(dataset, model, label, lang="de", limit=5000, min_length=20)
+    results = calculate_perplexities_limited(dataset, model, label, lang="ar", limit=5000, min_length=20)
     all_results.extend(results)
 
 # Convert all results to a DataFrame

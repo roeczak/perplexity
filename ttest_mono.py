@@ -6,7 +6,7 @@ import numpy as np
 from datasets import load_dataset
 
 class BloomPPL:
-    def __init__(self, device="cuda", model_id="tiiuae/falcon-7b", precision="float16"):
+    def __init__(self, device="cuda", model_id="tiiuae/falcon-7B", precision="float16"):
         self.device = device
         self.model_id = model_id
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -18,7 +18,7 @@ class BloomPPL:
         ).to(device)
         self.tokenizer = AutoTokenizer.from_pretrained(model_id)
 
-        self.max_length = 2048
+        self.max_length = 1024
         self.stride = 512
 
     def __call__(self, sentence):
@@ -58,7 +58,7 @@ dataset = load_dataset("Jinyan1/COLING_2025_MGT_multingual")
 # Function to calculate perplexities for a dataset
 def calculate_perplexities(dataset, model, label, limit=1000, min_length=20):
     # Filter data by label and minimum text length
-    filtered_data = dataset.filter(lambda x: x["label"] == label and len(x["text"]) >= min_length and x["lang"] == "ar")
+    filtered_data = dataset.filter(lambda x: x["label"] == label and len(x["text"]) >= min_length and x["lang"] == "bg")
     
     # Shuffle and limit the number of samples
     limited_data = filtered_data.shuffle(seed=42).select(range(min(limit, len(filtered_data))))
@@ -101,4 +101,4 @@ results = pd.DataFrame({
     "P-value": [p_value],
     "Cohen's d": [cohen_d]
 })
-results.to_csv("/home/ec2-user/monolingual_ttest_results.csv", index=False)
+results.to_csv("/home/ubuntu/perplexity/monolingual_ttest_results.csv", index=False)

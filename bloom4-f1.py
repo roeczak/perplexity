@@ -52,7 +52,7 @@ class BloomPPL:
 model = BloomPPL()
 
 # Load the dataset from CSV
-csv_path = "/home/ec2-user/multitude.csv"
+csv_path = "/home/ubuntu/perplexity/multitude.csv"
 df = pd.read_csv(csv_path)
 
 # Function to calculate perplexities for a given label and language

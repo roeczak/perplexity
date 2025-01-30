@@ -5,7 +5,7 @@ from scipy.stats import ttest_ind
 from datasets import load_dataset
 
 class GPT2PPL:
-    def __init__(self, device="cuda", model_id="gpt2"):
+    def __init__(self, device="cuda", model_id="gpt2-xl"):
         self.device = device
         self.model_id = model_id
         self.model = AutoModelForCausalLM.from_pretrained(model_id).to(device)
@@ -93,4 +93,4 @@ results = pd.DataFrame({
     "P-value": [p_value],
     "Cohen's d": [cohen_d]
 })
-results.to_csv("/home/ec2-user/monolingual_ttest_results.csv", index=False)
+results.to_csv("/home/ubuntu/perplexity/monolingual_ttest_results.csv", index=False)

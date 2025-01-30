@@ -5,7 +5,7 @@ from sklearn.metrics import f1_score
 
 # Define the LlamaPPL model class
 class LlamaPPL:
-    def __init__(self, device="cuda", model_id="facebook/opt-2.7b"):
+    def __init__(self, device="cuda", model_id="meta-llama/Llama-3.2-3B"):
         self.device = device
         self.model_id = model_id
         self.model = AutoModelForCausalLM.from_pretrained(model_id).to(device)
@@ -43,7 +43,7 @@ class LlamaPPL:
         return ppl
 
 # Load the dataset from CSV
-csv_path = "/home/ec2-user/multitude2.csv"
+csv_path = "/home/ubuntu/perplexity/multitude.csv"
 df = pd.read_csv(csv_path)
 
 # Initialize the perplexity model
