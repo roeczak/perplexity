@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class BloomPPL:
-    def __init__(self, device="cuda", model_id="gpt2", precision="float32"):
+    def __init__(self, device="cuda", model_id="gpt2-xl", precision="float32"):
         self.device = device
         self.model_id = model_id
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -58,8 +58,8 @@ dataset = load_dataset("Jinyan1/COLING_2025_MGT_multingual")
 df = pd.DataFrame(dataset["train"])
 
 # Function to calculate perplexities for a specific label
-def calculate_perplexities(df, model, label, limit=2000, min_length=10):
-    filtered_data = df[(df["label"] == label) & (df["text"].str.len() >= min_length) & (df["lang"] == "en")]
+def calculate_perplexities(df, model, label, limit=2000, min_length=20):
+    filtered_data = df[(df["label"] == label) & (df["text"].str.len() >= min_length) & (df["lang"] == "ur")]
     limited_data = filtered_data.head(limit)
 
     perplexities = []
@@ -79,33 +79,27 @@ human_perplexities = calculate_perplexities(df, model, label=0)
 print("Calculating perplexities for generated texts...")
 ai_perplexities = calculate_perplexities(df, model, label=1)
 
-# Function to plot perplexity distributions
-def plot_perplexity_distributions(human_ppl, ai_ppl, bin_width=5, output_file="perplexity_plot.png"):
-    max_ppl = max(max(human_ppl), max(ai_ppl))
-    bins = np.arange(0, max_ppl + bin_width, bin_width)
+# Perform t-test
+t_stat, p_value = ttest_ind(human_perplexities, ai_perplexities, equal_var=False)
 
-    # Calculate percentage distribution
-    human_hist, _ = np.histogram(human_ppl, bins=bins)
-    ai_hist, _ = np.histogram(ai_ppl, bins=bins)
+# Calculate Cohen's d
+mean_diff = np.mean(human_perplexities) - np.mean(ai_perplexities)
+pooled_std = np.sqrt((np.std(human_perplexities, ddof=1)**2 + np.std(ai_perplexities, ddof=1)**2) / 2)
+cohen_d = mean_diff / pooled_std
 
-    human_percentages = 100 * human_hist / len(human_ppl)
-    ai_percentages = 100 * ai_hist / len(ai_ppl)
+print(f"T-statistic: {t_stat}")
+print(f"P-value: {p_value}")
+print(f"Cohen's d: {cohen_d}")
 
-    # Plotting
-    plt.figure(figsize=(10, 6))
-    plt.bar(bins[:-1], human_percentages, width=bin_width, color="green", alpha=0.6, label="Human")
-    plt.bar(bins[:-1], ai_percentages, width=bin_width, color="red", alpha=0.6, label="Generated", align="edge")
-    plt.xlabel("Perplexity")
-    plt.ylabel("Percentage of Texts (%)")
-    plt.title("Perplexity Distribution of Human and Generated Texts")
-    plt.legend()
-    plt.grid(axis="y", linestyle="--", alpha=0.7)
-    plt.tight_layout()
-
-    # Save the plot as an image
-    plt.savefig(output_file)
-    print(f"Plot saved as {output_file}")
-
-
-#Plot the distributions
-plot_perplexity_distributions(human_perplexities, ai_perplexities)
+# Plot perplexities
+plt.figure(figsize=(10, 6))
+plt.hist(human_perplexities, bins=np.linspace(0, 100, 50), alpha=0.5, color='green', label='Human Texts', density=True)
+plt.hist(ai_perplexities, bins=np.linspace(0, 100, 50), alpha=0.5, color='red', label='AI-Generated Texts', density=True)
+plt.xlabel('Perplexity')
+plt.ylabel('Percentage of Texts')
+plt.title('Perplexity Distribution of Human vs AI Texts')
+plt.xlim(0, 100)  # Focus on 0-100 range
+plt.legend()
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.savefig("perplexity_plot2.png")
+print("Plot saved as 'perplexity_plot2.png'")
