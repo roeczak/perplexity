@@ -1,31 +1,30 @@
+import os
 import torch
 import pandas as pd
 import numpy as np
-import os
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-class BloomPPL:
-    def __init__(self, device="cuda", model_id="gpt2", precision="float32"):
+class PerplexityEvaluator:
+    def __init__(self, model_id, device="cuda", precision="float16"):
         self.device = device
         self.model_id = model_id
         self.model = AutoModelForCausalLM.from_pretrained(
             model_id,
             torch_dtype=torch.float16 if precision == "float16" else torch.float32,
-            device_map="auto",
-            offload_folder="./offload",
-            low_cpu_mem_usage=True
+            device_map="auto"
         ).to(device)
         self.tokenizer = AutoTokenizer.from_pretrained(model_id)
 
-        self.max_length = 1024
+        # Set max_length based on model
+        self.max_length = 1024 if model_id in ["gpt2", "gpt2-xl"] else 2048
         self.stride = 512
 
-    def __call__(self, sentence):
-        return self.getPPL(sentence)
-
-    def getPPL(self, sentence):
+    def get_ppl(self, sentence):
         encodings = self.tokenizer(sentence, return_tensors="pt")
         seq_len = encodings.input_ids.size(1)
+
+        if seq_len < 10:  # Ensure minimum length of 10 characters
+            return None
 
         nlls = []
         prev_end_loc = 0
@@ -45,50 +44,57 @@ class BloomPPL:
             if end_loc == seq_len:
                 break
 
-        ppl = int(torch.exp(torch.stack(nlls).sum() / end_loc))
-        return ppl
+        return int(torch.exp(torch.stack(nlls).sum() / end_loc))
 
-# Initialize the model
-model = BloomPPL()
+# List of models to evaluate
+models = ["bigscience/bloom-7b1", "tiiuae/falcon-7b"]
 
 # Load the dataset
 csv_path = "/home/ubuntu/perplexity/multitude.csv"
 df = pd.read_csv(csv_path)
 
-# Create output folder
+# Base output directory
 output_folder = "/home/ubuntu/perplexity/perplexity_data/"
-os.makedirs(output_folder, exist_ok=True)
 
-# Function to calculate perplexities
-def calculate_perplexities_limited(df, model, label, lang, limit=3000, min_length=10):
-    filtered_data = df[(df["label"] == label) & (df["language"] == lang) & (df["text"].str.len() >= min_length)]
-    limited_data = filtered_data.head(min(limit, len(filtered_data)))
+# Define languages that should be limited to 5000 texts
+limited_languages = {"en", "es", "ru"}  # English, Spanish, Russian
 
-    results = []
-    for count, (_, row) in enumerate(limited_data.iterrows(), start=1):
-        sentence = row["text"]
-        perplexity = model(sentence)
-        results.append({"text": sentence, "label": label, "perplexity": perplexity})
+# Iterate over models and languages
+for model_name in models:
+    print(f"Processing model: {model_name}")
+    
+    # Initialize the evaluator for the current model
+    evaluator = PerplexityEvaluator(model_name)
 
-        if count % 500 == 0:
-            print(f"Processed {count} texts for language: {lang}, label: {label}")
+    for lang in df["language"].unique():
+        print(f"Processing language: {lang}")
 
-    return results
+        # Ensure directory exists
+        model_lang_folder = os.path.join(output_folder, f"{model_name}")
+        os.makedirs(model_lang_folder, exist_ok=True)
 
-# Process all languages
-languages = df["language"].unique()
+        # Filter dataset for the language
+        df_lang = df[df["language"] == lang]
 
-for lang in languages:
-    print(f"Processing language: {lang}")
+ # Apply limit if the language is in the predefined list
+        if lang in limited_languages:
+            df_lang = df_lang.head(5000)  # Limit to 5000 texts
 
-    human_data = calculate_perplexities_limited(df, model, label=0, lang=lang)
-    ai_data = calculate_perplexities_limited(df, model, label=1, lang=lang)
+        # Calculate perplexities
+        results = []
+        for i, (_, row) in enumerate(df_lang.iterrows(), start=1):
+            ppl = evaluator.get_ppl(row["text"])
+            if ppl is not None:
+                results.append({"text": row["text"], "label": row["label"], "perplexity": ppl})
 
-    # Combine and save data
-    combined_data = pd.DataFrame(human_data + ai_data)
-    output_file = os.path.join(output_folder, f"perplexity_{lang}.csv")
-    combined_data.to_csv(output_file, index=False)
+ # Print progress update every 500 texts
+            if i % 200 == 0:
+                print(f"Processed {i} texts for {lang} using {model_name}")
 
-    print(f"Saved perplexities for {lang} to {output_file}")
+        # Convert to DataFrame and save
+        if results:
+            output_file = os.path.join(model_lang_folder, f"perplexity_{lang}.csv")
+            pd.DataFrame(results).to_csv(output_file, index=False)
+            print(f"Saved {output_file}")
 
-print("All perplexity calculations completed.")
+print("All CSV files generated successfully.")
