@@ -8,7 +8,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 dataset_name = "Jinyan1/COLING_2025_MGT_multingual"
 dataset = load_dataset(dataset_name)
 
-models = ["utter-project/EuroLLM-1.7B","ai-forever/mGPT"]
+models = ["bigscience/bloom-7b1"]
 limited_languages = {"en", "zh"}  # Limit English and Chinese
 excluded_languages = {"it"}  # Exclude Italian
 
@@ -53,12 +53,11 @@ def calculate_perplexity(text, model, tokenizer, max_length, stride=512):
     ppl = int(torch.exp(torch.stack(nlls).sum() / end_loc))
     return ppl
 
-def process_language(lang, dataset, model_id):
+def process_language(lang, dataset, model, tokenizer, max_length):
     """Process a specific language and compute perplexities."""
     if lang in excluded_languages:
         return
     
-    model, tokenizer, max_length = get_model(model_id)
     lang_data = dataset.filter(lambda example: example["lang"] == lang)
     sample_size = 5000 if lang in limited_languages else len(lang_data)
     lang_data = lang_data.select(range(min(sample_size, len(lang_data))))
@@ -71,13 +70,16 @@ def process_language(lang, dataset, model_id):
             results.append((text, label, ppl))
         
         if i % 200 == 0:
-            print(f"Processed {i} texts for language {lang} ({model_id})")
+            print(f"Processed {i} texts for language {lang}")
     
     save_path = f"perplexity_data_coling/{model_id}/{lang}.csv"
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     pd.DataFrame(results, columns=["text", "label", "perplexity"]).to_csv(save_path, index=False)
     print(f"Saved results to {save_path}")
 
+# Load models once before processing all languages
 for model_id in models:
+    model, tokenizer, max_length = get_model(model_id)
+    
     for lang in set(dataset["train"]["lang"]):  # Iterate over unique languages
-        process_language(lang, dataset["train"], model_id)
+        process_language(lang, dataset["train"], model, tokenizer, max_length)
