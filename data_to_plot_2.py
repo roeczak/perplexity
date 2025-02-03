@@ -4,8 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Base directories
-csv_base_dir = "/home/ubuntu/perplexity/perplexity_data/"
-plot_base_dir = "/home/ubuntu/perplexity/perplexity_plots/"
+csv_base_dir = "/home/ubuntu/perplexity/perplexity_data_coling/"
+plot_base_dir = "/home/ubuntu/perplexity/perplexity_plots_coling/"
 
 # Ensure the plot directory exists
 os.makedirs(plot_base_dir, exist_ok=True)
@@ -14,7 +14,7 @@ os.makedirs(plot_base_dir, exist_ok=True)
 def get_zoom_level(language, model):
     zoom_levels = {
         "ar": {"default": 20, "exceptions": [
-            (150, ["utter-project/EuroLLM-1.7B", "ai-forever/mGPT", "meta-llama/Llama-3.2-3B", "bigscience/bloom-7b1"])
+            (100, ["utter-project/EuroLLM-1.7B", "ai-forever/mGPT", "meta-llama/Llama-3.2-3B", "bigscience/bloom-7b1"])
         ]},
         "ca": {"default": 300, "exceptions": [
             (50, ["utter-project/EuroLLM-1.7B", "ai-forever/mGPT", "facebook/opt-2.7b", "meta-llama/Llama-3.2-3B"]),
@@ -28,7 +28,7 @@ def get_zoom_level(language, model):
             (200, ["gpt2"]),
             (50, ["facebook/opt-2.7b", "meta-llama/Llama-3.2-3B"])
         ]},
-        "en": {"default": 60},
+        "en": {"default": 100},
         "es": {"default": 50, "exceptions": [
             (200, ["gpt2"]),
             (100, ["gpt2-xl"])
@@ -42,8 +42,8 @@ def get_zoom_level(language, model):
             (50, ["facebook/opt-2.7b", "meta-llama/Llama-3.2-3B"])
         ]},
         "ru": {"default": 20, "exceptions": [
-            (100, ["utter-project/EuroLLM-1.7B", "ai-forever/mGPT", "meta-llama/Llama-3.2-3B"]),
-            (60, ["bigscience/bloom-7b1"])
+            (40, ["utter-project/EuroLLM-1.7B", "ai-forever/mGPT", "meta-llama/Llama-3.2-3B"]),
+            (40, ["bigscience/bloom-7b1"])
         ]},
         "uk": {"default": 20, "exceptions": [
             (100, ["utter-project/EuroLLM-1.7B", "ai-forever/mGPT", "meta-llama/Llama-3.2-3B"]),
@@ -52,6 +52,18 @@ def get_zoom_level(language, model):
         "zh": {"default": 60, "exceptions": [
             (100, ["ai-forever/mGPT", "meta-llama/Llama-3.2-3B", "bigscience/bloom-7b1"])
         ]},
+	"id": {"default": 50, "exceptions": [
+            (100, ["utter-project/EuroLLM-1.7B", "EleutherAI/gpt-neo-125m", "facebook/opt-125m"]),
+	    (300, ["gpt2"]), (150, ["gpt2-xl"])
+        ]},
+	"bg": {"default": 20, "exceptions": [
+            (50, ["utter-project/EuroLLM-1.7B", "ai-forever/mGPT", "meta-llama/Llama-3.2-3B"]),
+            (50, ["bigscience/bloom-7b1"])
+	]},
+	"ur": {"default": 20, "exceptions": [
+            (50, ["utter-project/EuroLLM-1.7B", "ai-forever/mGPT"]),
+            (50, ["bigscience/bloom-7b1"])
+	]}
     }
     
     if language in zoom_levels:
