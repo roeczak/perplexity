@@ -20,6 +20,7 @@ class PerplexityEvaluator:
         self.stride = 512
 
     def get_ppl(self, sentence):
+
         encodings = self.tokenizer(sentence, return_tensors="pt")
         seq_len = encodings.input_ids.size(1)
 
@@ -44,20 +45,25 @@ class PerplexityEvaluator:
             if end_loc == seq_len:
                 break
 
+        if end_loc == 0:  # Prevent division by zero
+            return None
+        if torch.exp(torch.stack(nlls).sum() / end_loc).isinf():
+            return None
         return int(torch.exp(torch.stack(nlls).sum() / end_loc))
 
 # List of models to evaluate
-models = ["bigscience/bloom-7b1", "tiiuae/falcon-7b"]
+models = ["bigscience/bloom-7b1"]
 
 # Load the dataset
-csv_path = "/home/ubuntu/perplexity/multitude.csv"
+csv_path = "/home/ubuntu/perplexity/coling_testset.csv"
 df = pd.read_csv(csv_path)
 
 # Base output directory
-output_folder = "/home/ubuntu/perplexity/perplexity_data/"
+output_folder = "/home/ubuntu/perplexity/perplexity_data_coling_test/"
 
 # Define languages that should be limited to 5000 texts
-limited_languages = {"en", "es", "ru"}  # English, Spanish, Russian
+limited_languages = {"Russian", "Urdu", "Chinese"}  # English, Spanish, Russian
+excluded_languages = {"German", "Hebrew", "Norwegian"}  # Languages to exclude
 
 # Iterate over models and languages
 for model_name in models:
@@ -67,6 +73,10 @@ for model_name in models:
     evaluator = PerplexityEvaluator(model_name)
 
     for lang in df["language"].unique():
+        if lang in excluded_languages:
+            print(f"Skipping excluded language: {lang}")
+            continue
+
         print(f"Processing language: {lang}")
 
         # Ensure directory exists
@@ -76,9 +86,9 @@ for model_name in models:
         # Filter dataset for the language
         df_lang = df[df["language"] == lang]
 
- # Apply limit if the language is in the predefined list
+        # Apply limit if the language is in the predefined list
         if lang in limited_languages:
-            df_lang = df_lang.head(5000)  # Limit to 5000 texts
+            df_lang = df_lang.head(10000)  # Limit to 5000 texts
 
         # Calculate perplexities
         results = []
@@ -87,7 +97,7 @@ for model_name in models:
             if ppl is not None:
                 results.append({"text": row["text"], "label": row["label"], "perplexity": ppl})
 
- # Print progress update every 500 texts
+            # Print progress update every 200 texts
             if i % 200 == 0:
                 print(f"Processed {i} texts for {lang} using {model_name}")
 
