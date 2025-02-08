@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 # Base directories
 csv_base_dir = "/home/ubuntu/perplexity/perplexity_data_coling_test/"
-plot_base_dir = "/home/ubuntu/perplexity/perplexity_plots_coling_test_/"
+plot_base_dir = "/home/ubuntu/perplexity/perplexity_plots_coling_test/"
 
 # Ensure the plot directory exists
 os.makedirs(plot_base_dir, exist_ok=True)
