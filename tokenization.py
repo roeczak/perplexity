@@ -1,56 +1,56 @@
 import os
 import pandas as pd
-import torch
-from transformers import AutoTokenizer
 import glob
+from transformers import AutoTokenizer
 
-# Define the root folder containing all models
-csv_folder = "/home/ubuntu/perplexity/perplexity_data"
+# Define paths
+csv_folder = "/home/ubuntu/perplexity/perplexity_data"  # Change this if needed
+output_csv = "/home/ubuntu/perplexity/tokenized_outputs.csv"
+num_words = 30  # Number of words to take from each text
 
-# Output file
-output_file = "/home/ubuntu/perplexity/tokenization_analysis.csv"
-
-# Recursively find all CSV files
-csv_files = glob.glob(os.path.join(csv_folder, "**", "perplexity_*.csv"), recursive=True)
-
-# Store results in a list
+# List to store results
 results = []
 
-for csv_file in csv_files:
-    try:
-        # Extract model name (parent directory of the CSV file)
-        model_dir = os.path.dirname(csv_file).replace(csv_folder + "/", "")
+# Get all CSV files recursively
+csv_files = glob.glob(os.path.join(csv_folder, "**", "perplexity_*.csv"), recursive=True)
 
-        # Extract language from filename
-        language = os.path.basename(csv_file).replace("perplexity_", "").replace(".csv", "")
+for csv_path in csv_files:
+    # Extract model name and language
+    parts = csv_path.replace(csv_folder, "").strip(os.sep).split(os.sep)
+    
+    if len(parts) == 2:
+        model, filename = parts
+    else:
+        model = "/".join(parts[:-1])  # Handle nested model names
+        filename = parts[-1]
+    
+    lang = filename.replace("perplexity_", "").replace(".csv", "")
 
-        # Load CSV
-        df = pd.read_csv(csv_file)
+    # Load tokenizer (ensure correct model formatting)
+    model_id = model.replace("_", "/")
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
 
-        # Get the first sentence (assuming it's the first row)
-        if df.empty or "text" not in df.columns:
-            print(f"Skipping {model_dir} - {language}: No valid text column.")
-            continue
-        first_sentence = df.iloc[0]["text"]
+    # Load CSV
+    df = pd.read_csv(csv_path)
 
-        # Load model tokenizer
-        try:
-            tokenizer = AutoTokenizer.from_pretrained(model_dir)
-        except Exception as e:
-            print(f"Skipping {model_dir} - {language} due to tokenizer error: {e}")
-            continue
+    if df.empty:
+        continue  # Skip empty files
+    
+    # Extract first non-null text
+    first_text = df["text"].dropna().iloc[0]
 
-        # Tokenize the sentence
-        tokenized = tokenizer.tokenize(first_sentence)
+    # Limit to the first few words
+    first_words = " ".join(first_text.split()[:num_words])
 
-        # Store results
-        results.append({"Model": model_dir, "Language": language, "Original Text": first_sentence, "Tokenized": " ".join(tokenized)})
+    # Tokenize
+    tokens = tokenizer.tokenize(first_words)
+    formatted_tokens = "(" + " ".join(f'"{token}"' for token in tokens) + ")"
 
-    except Exception as e:
-        print(f"Error processing {csv_file}: {e}")
+    # Store result
+    results.append({"model": model, "language": lang, "text": first_words, "tokenized": formatted_tokens})
 
-# Convert to DataFrame and save to CSV
+# Convert results to DataFrame and save as CSV
 df_results = pd.DataFrame(results)
-df_results.to_csv(output_file, index=False)
+df_results.to_csv(output_csv, index=False)
 
-print(f"Tokenization analysis saved to {output_file}")
+print(f"Tokenized outputs saved to {output_csv}")
