@@ -52,18 +52,18 @@ class PerplexityEvaluator:
         return int(torch.exp(torch.stack(nlls).sum() / end_loc))
 
 # List of models to evaluate
-models = ["bigscience/bloom-7b1"]
+models = ["tiiuae/falcon-7b"]
 
 # Load the dataset
 csv_path = "/home/ubuntu/perplexity/coling_testset.csv"
 df = pd.read_csv(csv_path)
 
 # Base output directory
-output_folder = "/home/ubuntu/perplexity/perplexity_data_coling_test/"
+output_folder = "/home/ubuntu/perplexity/perplexity_data_coling_test"
 
 # Define languages that should be limited to 5000 texts
-limited_languages = {"Russian", "Urdu", "Chinese"}  # English, Spanish, Russian
-excluded_languages = {"German", "Hebrew", "Norwegian"}  # Languages to exclude
+limited_languages = {"en","es","ru"}  # English, Spanish, Russian
+excluded_languages = {"German", "Hebrew", "Norwegian", "Japanese", "Chinese", "Arabic", "Italian", "Urdu", "Russian"}  # Languages to exclude
 
 # Iterate over models and languages
 for model_name in models:
@@ -88,7 +88,7 @@ for model_name in models:
 
         # Apply limit if the language is in the predefined list
         if lang in limited_languages:
-            df_lang = df_lang.head(10000)  # Limit to 5000 texts
+            df_lang = df_lang.head(5000)  # Limit to 5000 texts
 
         # Calculate perplexities
         results = []

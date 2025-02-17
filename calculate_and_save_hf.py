@@ -8,7 +8,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 dataset_name = "Jinyan1/COLING_2025_MGT_multingual"
 dataset = load_dataset(dataset_name)
 
-models = ["bigscience/bloom-7b1"]
+models = ["tiiuae/falcon-7b"]
 limited_languages = {"en", "zh"}  # Limit English and Chinese
 excluded_languages = {"it"}  # Exclude Italian
 
