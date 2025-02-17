@@ -63,7 +63,7 @@ output_folder = "/home/ubuntu/perplexity/perplexity_data_coling_test"
 
 # Define languages that should be limited to 5000 texts
 limited_languages = {"en","es","ru"}  # English, Spanish, Russian
-excluded_languages = {"German", "Hebrew", "Norwegian", "Japanese", "Chinese", "Arabic", "Italian", "Urdu", "Russian"}  # Languages to exclude
+excluded_languages = {"German", "Hebrew", "Norwegian"}  # Languages to exclude
 
 # Iterate over models and languages
 for model_name in models:
