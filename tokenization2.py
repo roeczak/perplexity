@@ -6,7 +6,7 @@ from transformers import AutoTokenizer
 # Define paths
 csv_folder = "/home/ubuntu/perplexity/perplexity_data"  # Change this if needed
 output_csv = "/home/ubuntu/perplexity/average_token_lengths.csv"
-num_words = 30  # Number of words to take from each text
+num_words = 100  # Number of words to take from each text
 
 # List to store results
 results = []
